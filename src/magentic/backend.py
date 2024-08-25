@@ -9,6 +9,17 @@ def get_chat_model() -> ChatModel:
     settings = get_settings()
 
     match settings.backend:
+
+        case Backend.POE_API_WRAPPER:
+            from magentic.chat_model.poe_api_wrapper_chat_model import PoeApiWrapperChatModel
+
+            return PoeApiWrapperChatModel(
+                tokens={
+                    "p_b": settings.poe_api_wrapper_token_p_b,
+                    "p_lat": settings.poe_api_wrapper_token_p_lat,
+                }
+            )
+
         case Backend.ANTHROPIC:
             from magentic.chat_model.anthropic_chat_model import AnthropicChatModel
 

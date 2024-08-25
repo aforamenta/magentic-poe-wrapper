@@ -37,6 +37,7 @@ logfire-api = "*"
 openai = ">=1.26.0"
 pydantic = ">=2.0.0"
 pydantic-settings = ">=2.0.0"
+poe-api-wrapper = {git = "https://github.com/snowby666/poe-api-wrapper"}
 
 [tool.poetry.extras]
 anthropic = ["anthropic"]

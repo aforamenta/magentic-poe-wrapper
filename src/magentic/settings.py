@@ -9,12 +9,17 @@ class Backend(Enum):
     LITELLM = "litellm"
     MISTRAL = "mistral"
     OPENAI = "openai"
+    POE_API_WRAPPER = "poe_api_wrapper"
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="MAGENTIC_")
 
     backend: Backend = Backend.OPENAI
+
+    poe_api_wrapper_model: str = "claude_3_igloo" # This is claude 3.5 sonnet
+    poe_api_wrapper_token_p_b: str | None = None
+    poe_api_wrapper_token_p_lat: str | None = None
 
     anthropic_model: str = "claude-3-opus-20240229"
     anthropic_api_key: str | None = None
