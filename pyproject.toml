@@ -27,9 +27,6 @@ authors = ["Jack Collins"]
 readme = "README.md"
 homepage = "https://magentic.dev/"
 repository = "https://github.com/jackmpcollins/magentic"
-packages = [
-    { include = "magentic", from = "src" },
-]
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"
