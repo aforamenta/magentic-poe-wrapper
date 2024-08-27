@@ -14,10 +14,9 @@ def get_chat_model() -> ChatModel:
             from magentic.chat_model.poe_api_wrapper_chat_model import PoeApiWrapperChatModel
 
             return PoeApiWrapperChatModel(
-                tokens={
-                    "p_b": settings.poe_api_wrapper_token_p_b,
-                    "p_lat": settings.poe_api_wrapper_token_p_lat,
-                }
+                poe_api_wrapper_model=settings.poe_api_wrapper_model,
+                poe_api_wrapper_token_p_b=settings.poe_api_wrapper_token_p_b,
+                poe_api_wrapper_token_p_lat=settings.poe_api_wrapper_token_p_lat
             )
 
         case Backend.ANTHROPIC:
