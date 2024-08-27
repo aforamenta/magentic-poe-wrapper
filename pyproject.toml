@@ -27,6 +27,9 @@ authors = ["Jack Collins"]
 readme = "README.md"
 homepage = "https://magentic.dev/"
 repository = "https://github.com/jackmpcollins/magentic"
+packages = [
+    { include = "magentic", from = "src" },
+]
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"
@@ -34,10 +37,12 @@ anthropic = {version = ">=0.27.0", optional = true}
 filetype = "*"
 litellm = {version = ">=1.41.12", optional = true}
 logfire-api = "*"
-openai = ">=1.26.0"
-pydantic = ">=2.0.0"
+openai = ">=1.40.0"
+pydantic = ">=2.7.0"
 pydantic-settings = ">=2.0.0"
-poe-api-wrapper = {git = "https://github.com/snowby666/poe-api-wrapper"}
+poe-api-wrapper = "^1.6.4"
+rich = "*"
+sqlmodel = "*"
 
 [tool.poetry.extras]
 anthropic = ["anthropic"]
@@ -45,7 +50,7 @@ litellm = ["litellm"]
 
 [tool.poetry.group.dev.dependencies]
 blacken-docs = "^1.16.0"
-logfire = "^0.46.1"
+logfire = "*"
 mypy = "*"
 pytest = "*"
 pytest-asyncio = "*"
