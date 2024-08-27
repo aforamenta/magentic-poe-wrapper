@@ -14,7 +14,7 @@ from typing import (
     overload,
 )
 
-import logfire_api as logfire
+#import logfire_api as logfire
 
 from magentic.backend import get_chat_model
 from magentic.chat_model.base import ChatModel
@@ -82,17 +82,17 @@ class PromptFunction(BasePromptFunction[P, R], Generic[P, R]):
 
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         """Query the LLM with the formatted prompt template."""
-        with logfire.span(
-            f"Calling prompt-function {self._name}",
-            **self._signature.bind(*args, **kwargs).arguments,
-        ):
-            message = self.model.complete(
-                messages=[UserMessage(content=self.format(*args, **kwargs))],
-                functions=self._functions,
-                output_types=self._return_types,
-                stop=self._stop,
-            )
-            return message.content
+        #with logfire.span(
+        #    f"Calling prompt-function {self._name}",
+        #    **self._signature.bind(*args, **kwargs).arguments,
+        #):
+        message = self.model.complete(
+            messages=[UserMessage(content=self.format(*args, **kwargs))],
+            functions=self._functions,
+            output_types=self._return_types,
+            stop=self._stop,
+        )
+        return message.content
 
 
 class AsyncPromptFunction(BasePromptFunction[P, R], Generic[P, R]):
@@ -100,17 +100,17 @@ class AsyncPromptFunction(BasePromptFunction[P, R], Generic[P, R]):
 
     async def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         """Asynchronously query the LLM with the formatted prompt template."""
-        with logfire.span(
-            f"Calling async prompt-function {self._name}",
-            **self._signature.bind(*args, **kwargs).arguments,
-        ):
-            message = await self.model.acomplete(
-                messages=[UserMessage(content=self.format(*args, **kwargs))],
-                functions=self._functions,
-                output_types=self._return_types,
-                stop=self._stop,
-            )
-            return message.content
+        #with logfire.span(
+        #    f"Calling async prompt-function {self._name}",
+        #    **self._signature.bind(*args, **kwargs).arguments,
+        #):
+        message = await self.model.acomplete(
+            messages=[UserMessage(content=self.format(*args, **kwargs))],
+            functions=self._functions,
+            output_types=self._return_types,
+            stop=self._stop,
+        )
+        return message.content
 
 
 class PromptDecorator(Protocol):
