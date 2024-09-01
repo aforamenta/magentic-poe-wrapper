@@ -2,6 +2,8 @@ from collections.abc import Callable, Iterable
 from itertools import chain
 from typing import Any, Sequence, TypeVar, cast, overload
 
+import os
+
 from pydantic import ValidationError, BaseModel
 
 import json
@@ -60,6 +62,18 @@ class PoeApiWrapperChatModel(ChatModel):
         poe_api_wrapper_token_p_b: str | None = None,
         poe_api_wrapper_token_p_lat: str | None = None,
     ):
+        if poe_api_wrapper_model is None:
+            poe_api_wrapper_model = os.getenv("MAGENTIC_POE_API_WRAPPER_MODEL")
+            if poe_api_wrapper_model is None:
+                raise ValueError("You must provide a model name for the PoeApiWrapperChatModel either through the constructor or the MAGENTIC_POE_API_WRAPPER_MODEL environment variable.")
+        if poe_api_wrapper_token_p_b is None:
+            poe_api_wrapper_token_p_b = os.getenv("MAGENTIC_POE_API_WRAPPER_TOKEN_P_B")
+            if poe_api_wrapper_token_p_b is None:
+                raise ValueError("You must provide a token for the PoeApiWrapperChatModel either through the constructor or the MAGENTIC_POE_API_WRAPPER_TOKEN_P_B environment variable.")
+        if poe_api_wrapper_token_p_lat is None:
+            poe_api_wrapper_token_p_lat = os.getenv("MAGENTIC_POE_API_WRAPPER_TOKEN_P_LAT")
+            if poe_api_wrapper_token_p_lat is None:
+                raise ValueError("You must provide a token for the PoeApiWrapperChatModel either through the constructor or the MAGENTIC_POE_API_WRAPPER_TOKEN_P_LAT environment variable.")
         self._model = poe_api_wrapper_model
         self._token_p_b = poe_api_wrapper_token_p_b
         self._token_p_lat = poe_api_wrapper_token_p_lat
