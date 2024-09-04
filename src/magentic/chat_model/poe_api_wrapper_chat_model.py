@@ -155,7 +155,7 @@ class PoeApiWrapperChatModel(ChatModel):
         combined_message = "\n".join(str(m.content) for m in messages)
         if tool_schemas:
             combined_message += "\n\nAvailable tools:\n" + json.dumps([schema.to_dict() for schema in tool_schemas])
-            combined_message += f"\n\nPlease use the {self._get_tool_choice(tool_schemas=tool_schemas, allow_string_output=allow_string_output)} tool.\n\n\nYou must ONLY output the json. Do not output any other text."
+            combined_message += f"\n\nPlease use the {self._get_tool_choice(tool_schemas=tool_schemas, allow_string_output=allow_string_output)} tool.\n\n\nYou must ONLY output the json without rich format. Do not output any other text."
 
         response = self._client.send_message(self._model, combined_message)
 
