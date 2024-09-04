@@ -166,9 +166,10 @@ class PoeApiWrapperChatModel(ChatModel):
         last_chunk = chunks[-1]
         chat_code = last_chunk.get("chatCode")
         chat_id = last_chunk.get("chatId")
+        full_response = last_chunk.get("text")
 
         # Combine all response chunks into a single string
-        full_response = "".join(chunk["response"] for chunk in chunks if chunk.get("response") is not None)
+        #full_response = "".join(chunk["response"] for chunk in chunks if chunk.get("response") is not None)
 
         try:
             # Get the full_response from the first "{" to the last "}"
