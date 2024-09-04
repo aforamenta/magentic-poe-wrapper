@@ -171,6 +171,8 @@ class PoeApiWrapperChatModel(ChatModel):
         full_response = "".join(chunk["response"] for chunk in chunks if chunk.get("response") is not None)
 
         try:
+            # Get the full_response from the first "{" to the last "}"
+            full_response = full_response[full_response.find("{"):full_response.rfind("}") + 1]
             # Try to parse the response as JSON
             parsed_json = json.loads(full_response)
             
