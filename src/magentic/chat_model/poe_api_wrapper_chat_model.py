@@ -1,6 +1,6 @@
 from collections.abc import Callable, Iterable
 from itertools import chain
-from typing import Any, Sequence, TypeVar, cast, overload
+from typing import Any, Sequence, TypeVar, cast, overload, List, Dict, Any, get_origin
 
 import os
 
@@ -177,14 +177,42 @@ class PoeApiWrapperChatModel(ChatModel):
             # Try to parse the response as JSON
             parsed_json = json.loads(full_response)
             
-            # If output_types is specified and the first type is a Pydantic model, use it to validate the JSON
             if output_types and issubclass(next(iter(output_types)), BaseModel):
                 output_model = next(iter(output_types))
-                validated_content = output_model.model_validate(parsed_json)
+                
+                # Create a dictionary with default empty values for all fields
+                default_data = {}
+                for field_name, field in output_model.__fields__.items():
+                    field_type = field.annotation
+                    if get_origin(field_type) == List or field_type == list:
+                        default_data[field_name] = list()
+                    elif get_origin(field_type) == Dict or field_type == dict:
+                        default_data[field_name] = list()
+                    else:
+                        default_data[field_name] = list()
+                
+                # Update default data with parsed JSON, keeping defaults for missing keys
+                for key, value in parsed_json.items():
+                    if key in default_data:
+                        if value is not None:
+                            default_data[key] = value
+                        # If value is None, keep the default empty list or dict
+                
+                try:
+                    validated_content = output_model.model_validate(default_data)
+                except ValidationError as e:
+                    print(f"Validation error: {e}")
+                    # You might want to handle this error more gracefully
+                    validated_content = default_data
+                
                 result = AssistantMessage(validated_content)
             else:
-                # If it's not a specific model, return the parsed JSON
-                result = AssistantMessage(parsed_json)
+                # If it's not a specific model, return the parsed JSON with default empty values
+                default_data = {
+                    key: ([] if isinstance(value, list) else {}) if value is None else value
+                    for key, value in parsed_json.items()
+                }
+                result = AssistantMessage(default_data)
         except json.JSONDecodeError:
             # If it's not valid JSON, process it as a string
             if allow_string_output:
