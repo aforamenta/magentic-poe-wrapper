@@ -37,7 +37,7 @@ logfire-api = "*"
 openai = ">=1.40.0"
 pydantic = ">=2.7.0"
 pydantic-settings = ">=2.0.0"
-poe-api-wrapper = "^1.6.8"
+poe-api-wrapper = "^1.6.4"
 rich = "*"
 sqlmodel = "*"
 
