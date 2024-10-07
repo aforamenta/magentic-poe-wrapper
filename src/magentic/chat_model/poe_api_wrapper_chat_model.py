@@ -173,9 +173,9 @@ class PoeApiWrapperChatModel(ChatModel):
 
         try:
             # Get the full_response from the first "{" to the last "}"
-            full_response = full_response[full_response.find("{"):full_response.rfind("}") + 1]
+            full_response_json_limiter = full_response[full_response.find("{"):full_response.rfind("}") + 1]
             # Try to parse the response as JSON
-            parsed_json = json.loads(full_response)
+            parsed_json = json.loads(full_response_json_limiter)
             
             if output_types and issubclass(next(iter(output_types)), BaseModel):
                 output_model = next(iter(output_types))

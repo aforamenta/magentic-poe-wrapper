@@ -30,9 +30,9 @@ repository = "https://github.com/jackmpcollins/magentic"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"
-anthropic = {version = ">=0.27.0", optional = true}
+anthropic = {version = ">=0.27.0", optional = false}
 filetype = "*"
-litellm = {version = ">=1.41.12", optional = true}
+litellm = {version = ">=1.41.12", optional = false}
 logfire-api = "*"
 openai = ">=1.40.0"
 pydantic = ">=2.7.0"
