@@ -163,3 +163,7 @@ cython_debug/
 
 # IDE
 .vscode/
+launch.json
+
+# Fork specific
+test_poe_api_wrapper.py
