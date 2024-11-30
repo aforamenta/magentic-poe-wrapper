@@ -1,10 +1,14 @@
 from collections.abc import Callable, Iterable
 from itertools import chain
-from typing import Any, Sequence, TypeVar, cast, overload, List, Dict, Any, get_origin
+from typing import Any, Sequence, TypeVar, cast, overload, List, Dict, Any, get_origin, get_args, Union
+from datetime import datetime
 
 import os
 
-from pydantic import ValidationError, BaseModel
+import re
+
+from pydantic import ValidationError, BaseModel, create_model
+from pydantic_core import PydanticUndefined
 
 import json
 
@@ -152,10 +156,79 @@ class PoeApiWrapperChatModel(ChatModel):
         streamed_str_in_output_types = is_any_origin_subclass(output_types, StreamedStr)
         allow_string_output = str_in_output_types or streamed_str_in_output_types
 
+        # Modify schema dictionaries during serialization to exclude unwanted fields
+        # HACK: the following code is a hackish way to send ONLY the parameters of the child class to poe. It shouldn't be needed in production, but we'll see
+        schemas_list = []
+        for schema in tool_schemas:
+            schema_dict = schema.to_dict()
+
+            # Check if 'function' key exists in schema_dict
+            if 'function' in schema_dict:
+                function_dict = schema_dict['function']
+                function_name = function_dict.get('name')
+                parameters = function_dict.get('parameters', {})
+                properties = parameters.get('properties', {})
+                required = parameters.get('required', [])
+
+                unwanted_fields = [
+                    'context_hook', 'prompt_hook', 'instance_hook',
+                    'chat_code', 'chat_id', 'id'
+                ]
+
+                # Remove unwanted fields from 'properties'
+                for field in unwanted_fields:
+                    properties.pop(field, None)
+
+                # Remove unwanted fields from 'required'
+                required = [field for field in required if field not in unwanted_fields]
+
+                # Update the parameters dict
+                parameters['properties'] = properties
+                parameters['required'] = required
+
+                # Update the function dict with modified parameters
+                function_dict['parameters'] = parameters
+
+                # Update 'function' in schema_dict
+                schema_dict['function'] = function_dict
+
+            else:
+                # Handle schemas without 'function' key
+                function_name = schema_dict.get('name')
+                parameters = schema_dict.get('parameters', {})
+                properties = parameters.get('properties', {})
+                required = parameters.get('required', [])
+
+                unwanted_fields = [
+                    'context_hook', 'prompt_hook', 'instance_hook',
+                    'chat_code', 'chat_id', 'id'
+                ]
+
+                # Remove unwanted fields from 'properties'
+                for field in unwanted_fields:
+                    properties.pop(field, None)
+
+                # Remove unwanted fields from 'required'
+                required = [field for field in required if field not in unwanted_fields]
+
+                # Update the parameters dict
+                parameters['properties'] = properties
+                parameters['required'] = required
+
+                # Update the schema dict with modified parameters
+                schema_dict['parameters'] = parameters
+
+            # Append the modified schema_dict to schemas_list
+            schemas_list.append(schema_dict)
+
         combined_message = "\n".join(str(m.content) for m in messages)
+        combined_message += "\n\nAvailable tools:\n" + json.dumps(schemas_list)
         if tool_schemas:
-            combined_message += "\n\nAvailable tools:\n" + json.dumps([schema.to_dict() for schema in tool_schemas])
-            combined_message += f"\n\nPlease use the {self._get_tool_choice(tool_schemas=tool_schemas, allow_string_output=allow_string_output)} tool.\n\n\nYou must ONLY output the json without rich format. Do not output any other text."
+            combined_message += (
+                f"\n\nPlease use the "
+                f"{self._get_tool_choice(tool_schemas=tool_schemas, allow_string_output=allow_string_output)} tool."
+                "\n\nYou must ONLY output the json without rich format. Do not output any other text."
+            )
 
         response = self._client.send_message(self._model, combined_message)
 
@@ -173,9 +246,18 @@ class PoeApiWrapperChatModel(ChatModel):
 
         try:
             # Get the full_response from the first "{" to the last "}"
-            full_response = full_response[full_response.find("{"):full_response.rfind("}") + 1]
+
+            def clean_json_string(json_str):
+                # Remove trailing commas in arrays
+                json_str = re.sub(r',(\s*[\]}])', r'\1', json_str)
+                # Remove newlines outside of quotes (if needed)
+                json_str = re.sub(r'\n(?=(?:[^"]*"[^"]*")*[^"]*$)', '', json_str)
+                return json_str
+
+            cleaned_json = clean_json_string(full_response) # HACK: remove the newlines thare are NOT part of the json
+            full_response_json_limiter = cleaned_json[cleaned_json.find("{"):cleaned_json.rfind("}") + 1] #HACK: limit json
             # Try to parse the response as JSON
-            parsed_json = json.loads(full_response)
+            parsed_json = json.loads(full_response_json_limiter)
             
             if output_types and issubclass(next(iter(output_types)), BaseModel):
                 output_model = next(iter(output_types))
@@ -184,12 +266,44 @@ class PoeApiWrapperChatModel(ChatModel):
                 default_data = {}
                 for field_name, field in output_model.__fields__.items():
                     field_type = field.annotation
-                    if get_origin(field_type) == List or field_type == list:
+                    
+                    # Unwrap Union or Optional types, e.g., Optional[int] becomes int
+                    origin_type = get_origin(field_type)
+                    if origin_type is Union:
+                        # Get the first non-None type in the Union (usually for Optional[Type])
+                        field_type = next(t for t in get_args(field_type) if t is not type(None))
+
+                    # Handle List and Dict types
+                    if get_origin(field_type) == list or field_type == List:
                         default_data[field_name] = list()
-                    elif get_origin(field_type) == Dict or field_type == dict:
-                        default_data[field_name] = list()
+                    elif get_origin(field_type) == dict or field_type == Dict:
+                        default_data[field_name] = dict()
+
+                    # Handle specific field names with custom logic (these are always strings or None)
+                    elif field_name in ['context_hook', 'prompt_hook', 'instance_hook', 'chat_code', 'chat_id']:
+                        default_data[field_name] = None
+                    elif field_name == 'id':
+                        default_data[field_name] = None
+
+                    # Handle integer fields
+                    elif field_type == int:
+                        default_data[field_name] = None  # or -1 if required
+
+                    # Handle float fields
+                    elif field_type == float:
+                        default_data[field_name] = None  # or -1.0 if required
+
+                    # Handle string fields
+                    elif field_type == str:
+                        default_data[field_name] = None
+
+                    # Handle datetime fields
+                    elif field_type == datetime:
+                        default_data[field_name] = None
+
+                    # Fallback for unsupported types
                     else:
-                        default_data[field_name] = list()
+                        default_data[field_name] = None
                 
                 # Update default data with parsed JSON, keeping defaults for missing keys
                 for key, value in parsed_json.items():
